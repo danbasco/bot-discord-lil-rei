@@ -1,0 +1,343 @@
+import math
+#This cog is not ready yet :)
+
+
+import re
+
+import discord
+from discord.ext import commands
+from discord.ext.commands import has_permissions
+
+import pomice
+
+from dotenv import load_dotenv
+import os
+
+
+
+from contextlib import suppress
+
+URL_REG = re.compile(r'https?://(?:www\.)?.+')
+
+class NoVoiceChannel(commands.CommandError):
+    pass
+
+class NoMusicSpecified(commands.CommandError):
+    pass
+
+
+class QueueEmpty(commands.CommandError):
+    pass
+
+
+
+class Player(pomice.Player):
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.queue = pomice.Queue()
+        self.controller: discord.Message = None
+        self.context: commands.Context = None
+        self.dj: discord.Member = None
+
+        self.pause_votes = set()
+        self.resume_votes = set()
+        self.skip_votes = set()
+        self.shuffle_votes = set()
+        self.stop_votes = set()
+
+
+    
+    async def do_next(self) -> None:
+        # Clear the votes for a new song
+        self.pause_votes.clear()
+        self.resume_votes.clear()
+        self.skip_votes.clear()
+        self.shuffle_votes.clear()
+        self.stop_votes.clear()
+
+        # Check if theres a controller still active and deletes it
+        if self.controller:
+            with suppress(discord.HTTPException):
+                await self.controller.delete()
+
+        # Queue up the next track, else teardown the player
+        try:
+            track: pomice.Track = self.queue.get()
+        except pomice.QueueEmpty:
+            raise QueueEmpty
+
+        await self.play(track)
+
+        # Call the controller (a.k.a: The "Now Playing" embed) and check if one exists
+
+        if track.is_stream:
+            embed = discord.Embed(
+                title="Tocando agora...",
+                description=f":red_circle: **LIVE** [{track.title}]({track.uri}) [{track.requester.mention}]",
+                color=0xa8326d,
+                
+            )
+            embed.set_image(url=track.thumbnail)
+            embed.set_footer(text= "Lil Rei • © Todos os direitos reservados.")
+            self.controller = await self.context.send(embed=embed)
+        else:
+            embed = discord.Embed(
+                title=f"Tocando agora...",
+                description=f"[{track.title}]({track.uri}) [{track.requester.mention}]",
+                color=0xa8326d,
+            )
+            embed.set_image(url=track.thumbnail)
+            embed.set_footer(text= "Lil Rei • © Todos os direitos reservados.")
+            self.controller = await self.context.send(embed=embed)
+
+
+
+    async def teardown(self):
+        """Clear internal states, remove player controller and disconnect."""
+        with suppress((discord.HTTPException), (KeyError)):
+            await self.destroy()
+            if self.controller:
+                await self.controller.delete()
+
+
+    async def set_context(self, ctx: commands.Context):
+        """Set context for the player"""
+        self.context = ctx
+        self.dj = ctx.author
+
+class Music(commands.Cog):
+    
+#init
+    
+    def __init__(self, client):
+        self.client = client
+        self.pomice = pomice.NodePool()
+ 
+ #nodes
+
+    async def start_nodes(self):
+
+
+        #SPOTIFY SECRET --> 
+
+        load_dotenv()
+        SPT_ID = os.getenv("SPOTIFY_ID")
+        SPT_SECRET = os.getenv("SPOTIFY_SECRET")
+
+        #loading the pomice node
+        await self.pomice.create_node(bot=self.client, host="127.0.0.1",port=2333, identifier='MAIN', password="youshallnotpass", spotify_client_id=SPT_ID, spotify_client_secret= SPT_SECRET)
+        
+
+    
+    def required(self, ctx: commands.Context):
+        """Method which returns required votes based on amount of members in a channel."""
+        player: Player = ctx.voice_client
+        channel = self.bot.get_channel(int(player.channel.id))
+        required = math.ceil((len(channel.members) - 1) / 2.5)
+
+        if ctx.command.name == "stop":
+            if len(channel.members) == 3:
+                required = 2
+
+        return required
+    
+#commands
+
+
+    @commands.command(name='join', aliases=['connect'])
+    async def _join(self, ctx,  *, channel: discord.VoiceChannel = None):
+        
+        if not channel:
+            channel = getattr(ctx.author.voice, "channel", None)
+            if not channel:
+                raise NoVoiceChannel
+        
+        
+
+        await ctx.author.voice.channel.connect(cls=Player)
+        player: Player = ctx.voice_client
+
+
+        await player.set_context(ctx=ctx)
+        await ctx.reply(f"`✅` | **Bot conectado em {channel.name}**")
+        
+
+    @commands.command(name="leave", aliases=["disconnect"])
+    async def _leave(self, ctx: commands.Context):
+
+        if not (player := ctx.voice_client):
+            raise NoVoiceChannel
+
+        await player.destroy()
+        await ctx.send("`✅` | **Bot desconectado!**")
+        
+
+    
+    @commands.command(name='play', aliases = ["tocar", "p"])
+    async def _play(self, ctx, *, search: str = None):
+
+        if search is None:
+            raise NoMusicSpecified
+        #join call if not 
+        if not (player := ctx.voice_client):
+
+            await ctx.author.voice.channel.connect(cls=Player)
+            player: Player = ctx.voice_client
+            await player.set_context(ctx=ctx)
+                
+            
+            
+        results = await player.get_tracks(search, ctx=ctx)
+
+
+        if not results:
+            return await ctx.reply("**`❌` | Não foi possivel encontrar a música, tente novamente.**", delete_after=7)
+
+
+        #playlist
+        if isinstance(results, pomice.Playlist):
+            for track in results.tracks:
+                player.queue.put(track)
+
+        else:
+            track = results[0]
+            player.queue.put(track)
+
+        #first music
+        if not player.is_playing:
+            await player.do_next()
+
+        else:
+            embed = discord.Embed(
+                title=f"Adicionando a fila...",
+                description=f"[{track.title}]({track.uri}) [{track.requester.mention}]",
+                color=0xa8326d,
+            )
+            embed.set_footer(text= "Lil Rei • © Todos os direitos reservados.")
+            await ctx.send(embed=embed)
+
+
+    
+    @commands.command(name = "pause", aliases=["pausa", "resume", "continuar"])
+    async def _pause(self, ctx):
+        """Pause or resume the currently playing song."""
+        if not (player := ctx.voice_client):
+            raise NoVoiceChannel
+
+        if not player.is_connected:
+            return
+
+
+        if player.is_paused:
+            await player.set_pause(False)
+            await ctx.reply("**`✅` | Tocando a música...**", delete_after=7)
+
+        else:
+            await ctx.reply("**`✅` | Música pausada.**", delete_after=7)
+            await player.set_pause(True)
+
+
+        
+
+        
+    @commands.command(name="skip", aliases=["s", "pular", "next"])
+    async def _skip(self, ctx):
+         
+        if not (player := ctx.voice_client):
+            raise NoVoiceChannel
+
+        
+        if not player.is_connected:
+            return
+        
+        
+        required = self.required(ctx)
+        player.skip_votes.add(ctx.author)
+
+        if len(player.skip_votes) >= required:
+            await ctx.send("**`✅` | Pulando música...**")
+            player.skip_votes.clear()
+            await player.stop()
+
+        else:
+            await ctx.send(f"{ctx.author.mention} votou para pular a música! **{len(player.skip_votes)}/{required}**",delete_after=15)
+
+
+    @commands.command(name="forceskip", aliases=["fs"])
+    @has_permissions(administrator= True)
+    async def _forceskip(self, ctx):
+
+        if not (player := ctx.voice_client):
+            raise NoVoiceChannel
+
+        
+        if not player.is_connected:
+            return
+        
+        await ctx.send("**`✅` | Pulando música...**")
+        player.skip_votes.clear()
+        await player.stop()
+
+
+
+    @commands.command(name="queue", aliases=["q", "fila"])
+    async def _queue(self, ctx, show: int = 10):
+        
+        if not (player := ctx.voice_client):
+            raise NoVoiceChannel
+
+        if not player.is_connected:
+            return
+
+        if player.queue.is_empty is True:
+            return await ctx.reply("**A fila está vazia!**")
+
+
+        fila = player.queue.get_queue()
+        
+        
+        embed = discord.Embed(
+            
+            description= f"__Mostrando próximas {show} músicas:__",
+            color=0xa8326d,
+            
+        )
+        embed.set_author(name=f"__Tocando:__ {player.current.title}")
+        embed.set_thumbnail(url=player.current.thumbnail)
+
+        for i in range(10):
+        
+            embed.add_field(name="", value=f"`✅` **__[{fila[i].title}]({fila[i].uri})__**", inline=False)
+        
+
+        embed.set_footer(text= "Lil Rei • © Todos os direitos reservados.")
+
+
+        await ctx.send(embed=embed)
+
+    #EVENTS
+
+
+    @commands.Cog.listener()
+    async def on_pomice_track_end(self, player: Player, track, _):
+        await player.do_next()
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, exc):
+            
+             
+        if isinstance(exc, NoVoiceChannel):
+            await ctx.reply("`❌` | **Preciso estar em um canal de voz para executar esse comando!**", delete_after=7)
+        if isinstance(exc, NoMusicSpecified):
+            await ctx.reply("`❌` | **Nenhuma música foi especificada!**", delete_after=7)
+        if isinstance(exc, QueueEmpty):
+            await ctx.send("`❌` | **Nenhuma música para tocar!**", delete_after=7)
+    
+    #on testing 
+    
+
+async def setup(client):
+    await client.add_cog(Music(client))
