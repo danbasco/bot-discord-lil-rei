@@ -18,7 +18,8 @@ OPENAI_T = os.environ.get("OPENAI")
 OWNER_ID = os.environ.get("OWNER_ID")
 APP_ID = os.environ.get("APP_ID")
 
-#keep_alive()
+keep_alive()
+
 
 class LilRei(commands.Bot):
     def __init__(self):
