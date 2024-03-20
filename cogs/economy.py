@@ -109,7 +109,7 @@ class Economy(commands.Cog):
         if user is None:
             user = ctx.author
 
-        await ctx.send(f"<@{user.id}> possui **{self.cursor.getMoney(user)}** lil coins!\n\nPosição no rank: **{self.cursor.getPos(user)}**")
+        await ctx.send(f"> <@{user.id}> possui **{self.cursor.getMoney(user)}** lil coins! Posição no rank: **{self.cursor.getPos(user)}**")
 
 
 
