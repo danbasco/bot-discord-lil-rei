@@ -12,6 +12,7 @@ from discord.ext.commands.errors import CommandError
 import asyncio
 
 
+#classes for error handling
 class NotInRole(commands.CommandError):
     pass
 
@@ -265,6 +266,8 @@ class Admin(commands.Cog):
         await ctx.send(embed=embed)
 
     
+
+    #EVENT LISTENER
     @commands.Cog.listener()
     async def on_command_error(self, ctx, exc):
 

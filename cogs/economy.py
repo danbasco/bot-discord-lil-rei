@@ -12,6 +12,7 @@ from easy_pil import Editor, load_image_async, Font
 
 URI = os.environ.get("URI")
 
+#func to connect to the database
 def createData():
     uri = URI  
     mongocl = MongoClient(uri, server_api=ServerApi('1'))
@@ -19,15 +20,14 @@ def createData():
     return cursor
 
 
+#class to manipulate the user/money easily
 class Money:
 
     def __init__(self, db):
         self.db = db
 
-    def resetMoney(self):
-        pass
-
-
+    #GET MONEY
+        
     def getMoney(self, user: discord.User):
 
         key = {"user": user.id}
@@ -50,6 +50,7 @@ class Money:
 
         return int(money)
 
+    #SET MONEY
 
     def setMoney(self, user: discord.User, ammount: int):
         
@@ -57,6 +58,9 @@ class Money:
         update = {"$set": { "money": ammount }}
         self.db.money.update_one(key, update, True)
 
+
+    #GET ALL USERS - LIMIT: QUANTITY TO DISPLAY
+    
     def getAll(self, limit: int = 0):
 
         all = self.db.money.find().sort("money", -1).limit(limit)
@@ -66,13 +70,30 @@ class Money:
 
         return users
     
+    #BITESTHEDUST
+
     def resetAll(self):
         all = self.db.money.find()
         for user in all:
             update = {"$set": { "money": 0 }}
             self.db.money.update_one(user, update, True)
 
+    #GETPOS - RETURN THE POSITION OF THE USER IN THE LEADERBOARD
+            
         
+    def getPos(self, user: discord.User):
+        i = 1;
+
+        all = self.db.money.find({}, {"user": 1}).sort("money", -1)
+      
+        for v in all:
+            if int(v["user"]) == user.id:
+                break
+
+            i = i + 1
+
+
+        return i;
 
 class Economy(commands.Cog):
 
@@ -80,15 +101,19 @@ class Economy(commands.Cog):
         self.client = client
         self.cursor = cursor
 
-
+    #BANK
+        
     @commands.command(name = "bank", aliases=["atm", "bal", "money", "dinheiro"])
     async def _bank(self, ctx, user: discord.User = None):
 
         if user is None:
             user = ctx.author
 
-        await ctx.send(f"<@{user.id}> possui **{self.cursor.getMoney(user)}** lil coins!\n\nPosição no rank: **¨¨¨**")
+        await ctx.send(f"<@{user.id}> possui **{self.cursor.getMoney(user)}** lil coins!\n\nPosição no rank: **{self.cursor.getPos(user)}**")
 
+
+
+    #SET MONEY
 
     @commands.command(name="setmoney")
     async def _setmoney(self, ctx, user: discord.User, ammount: int):
@@ -99,6 +124,10 @@ class Economy(commands.Cog):
 
         self.cursor.setMoney(user, ammount)
         await ctx.send(f"**Novo valor da conta de <@{user.id}>:** {self.cursor.getMoney(user)}.")
+
+
+
+    #DAILY
 
 
     @commands.command(name="daily")
@@ -113,6 +142,9 @@ class Economy(commands.Cog):
 
         await ctx.send(f"**Parabéns <@{ctx.author.id}>**! Você ganhou *{num}* lil coins! Volte novamente em 12 horas para resgatar mais!")
 
+
+
+    #PIX
     
     @commands.command(name="pix", aliases=["pagar", "transferir", "pay"])
     async def _pix(self, ctx, paiduser: discord.User = None, *, ammount: int = None):
@@ -170,6 +202,9 @@ class Economy(commands.Cog):
             await ctx.send("**Transferência concluida!**")
     
 
+
+    #owner- GETALL
+
     @commands.command(name="getall")
     async def _getall(self, ctx, limit:int = 0):
 
@@ -185,6 +220,8 @@ class Economy(commands.Cog):
         await ctx.send(f"".join(j))
 
 
+
+    #RANK
     
     @commands.command(name="top", aliases=["rank"])
     async def _rank(self, ctx, embedst:bool = True):
@@ -211,7 +248,12 @@ class Economy(commands.Cog):
 
 
 
+    ##                   cassino                     ##
         
+
+
+
+
 
 async def setup(client):
     await client.add_cog(Economy(client, createData()))
