@@ -71,7 +71,7 @@ async def on_disconnect():
 
 @client.event
 
-#respond if someone pings the bot!
+# Respond if someone pings the bot!
 
 async def on_message(message):
     

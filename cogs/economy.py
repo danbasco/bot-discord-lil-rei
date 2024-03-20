@@ -14,7 +14,7 @@ import functools
 
 URI = os.environ.get("URI")
 
-#func to connect to the database
+# Func to connect to the database
 def createData():
     uri = URI  
     mongocl = MongoClient(uri, server_api=ServerApi('1'))
@@ -25,14 +25,14 @@ def createData():
 class NoMoney(commands.CommandError):
     pass
 
-#class to manipulate the user/money easily
+# Class to manipulate the user/money easily
 class Money:
 
     def __init__(self, db):
         self.db = db
 
 
-    #DECORATOR   
+    # Decorator 
     
     def checkMoney(self):
         def wrapper(func):
@@ -44,13 +44,15 @@ class Money:
 
                 if money < ammount or ammount <= 0: raise NoMoney
 
+
+
                 return await func(*args, **kwargs)
             
             return wrapped
         return wrapper
     
 
-    #GET MONEY
+    # Get Money
     
     def getMoney(self, user: discord.User):
 
@@ -75,7 +77,7 @@ class Money:
         return int(money)
 
     
-    #SET MONEY
+    # Set Money
 
     def setMoney(self, user: discord.User, ammount: int):
         
@@ -84,7 +86,7 @@ class Money:
         self.db.money.update_one(key, update, True)
 
 
-    #GET ALL USERS - LIMIT: QUANTITY TO DISPLAY
+    # Get All, Limit- Number of users to search
     
     def getAll(self, limit: int = 0):
 
@@ -95,7 +97,7 @@ class Money:
 
         return users
     
-    #BITESTHEDUST
+    #Reset All
 
     def resetAll(self):
         all = self.db.money.find()
@@ -103,7 +105,8 @@ class Money:
             update = {"$set": { "money": 0 }}
             self.db.money.update_one(user, update, True)
 
-    #GETPOS - RETURN THE POSITION OF THE USER IN THE LEADERBOARD
+
+    #GetPos - Position in the leaderboard
             
         
     def getPos(self, user: discord.User)-> int:
@@ -129,7 +132,7 @@ class Economy(commands.Cog):
         self.cursor = cursor
 
 
-    #BANK
+    # Bank
         
     @commands.command(name = "bank", aliases=["atm", "bal", "money", "dinheiro"])
     async def _bank(self, ctx, user: discord.User = None):
@@ -141,7 +144,7 @@ class Economy(commands.Cog):
 
 
 
-    #SET MONEY
+    # Setmoney
 
     @commands.command(name="setmoney")
     async def _setmoney(self, ctx, user: discord.User, ammount: int):
@@ -155,7 +158,7 @@ class Economy(commands.Cog):
 
 
 
-    #DAILY
+    # Daily
 
 
     @commands.command(name="daily")
@@ -172,7 +175,7 @@ class Economy(commands.Cog):
 
 
 
-    #PIX
+    # Pix
     
     @commands.command(name="pix", aliases=["pagar", "transferir", "pay"])
     @Money.checkMoney(createData())
@@ -227,7 +230,7 @@ class Economy(commands.Cog):
     
 
 
-    #owner- GETALL
+    # Getall
 
     @commands.command(name="getall")
     async def _getall(self, ctx, limit:int = 0):
@@ -245,7 +248,7 @@ class Economy(commands.Cog):
 
 
 
-    #RANK
+    # Rank
     
     @commands.command(name="top", aliases=["rank"])
     async def _rank(self, ctx, embedst:bool = True):
@@ -271,11 +274,39 @@ class Economy(commands.Cog):
 
 
 
-    #VOTE
-        
+    # Vote
+    
+    '''
     @commands.command(name="vote", aliases=["votar"])
     async def _vote(self, ctx):
         await ctx.author.send("link")
+    '''
+
+    # MadeinHeaven
+
+    @commands.command(name="madeinheaven")
+    async def _bitesthedust(self, ctx):
+
+        if ctx.author.id != 409311773720576010:
+            return await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
+        
+        else:
+            
+            def check(message):
+                return message.author == ctx.author and message.content == 'confirmar'
+                
+            try: 
+                message = await self.client.wait_for("message", timeout=10, check=check)
+    
+            except asyncio.TimeoutError:
+                await ctx.send("Tempo esgotado!")
+            else:
+            
+                self.cursor.resetAll()
+                await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
+            
+
+
     ##                   cassino                     ##
         
 
