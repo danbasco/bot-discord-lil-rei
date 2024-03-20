@@ -10,6 +10,8 @@ from pymongo.mongo_client import MongoClient
 
 from easy_pil import Editor, load_image_async, Font
 
+import functools
+
 URI = os.environ.get("URI")
 
 #func to connect to the database
@@ -20,14 +22,36 @@ def createData():
     return cursor
 
 
+class NoMoney(commands.CommandError):
+    pass
+
 #class to manipulate the user/money easily
 class Money:
 
     def __init__(self, db):
         self.db = db
 
+
+    #DECORATOR   
+    
+    def checkMoney(self):
+        def wrapper(func):
+            @functools.wraps(func)
+            async def wrapped(*args, **kwargs):
+
+                money = self.getMoney(args[-1])
+                ammount = int(kwargs["ammount"])
+
+                if money < ammount or ammount <= 0: raise NoMoney
+
+                return await func(*args, **kwargs)
+            
+            return wrapped
+        return wrapper
+    
+
     #GET MONEY
-        
+    
     def getMoney(self, user: discord.User):
 
         key = {"user": user.id}
@@ -37,11 +61,11 @@ class Money:
              cur.next()
 
         except Exception:
-  
+    
             self.db.money.insert_one(
                 {
                 "money": 0,
-                "user": user.id,
+                "user": user,
                 }
             )
         
@@ -50,6 +74,7 @@ class Money:
 
         return int(money)
 
+    
     #SET MONEY
 
     def setMoney(self, user: discord.User, ammount: int):
@@ -81,7 +106,7 @@ class Money:
     #GETPOS - RETURN THE POSITION OF THE USER IN THE LEADERBOARD
             
         
-    def getPos(self, user: discord.User):
+    def getPos(self, user: discord.User)-> int:
         i = 1;
 
         all = self.db.money.find({}, {"user": 1}).sort("money", -1)
@@ -94,12 +119,15 @@ class Money:
 
 
         return i;
+    
+
 
 class Economy(commands.Cog):
 
     def __init__(self, client, cursor):
         self.client = client
         self.cursor = cursor
+
 
     #BANK
         
@@ -140,17 +168,17 @@ class Economy(commands.Cog):
         money = money+num
         self.cursor.setMoney(ctx.author, money)
 
-        await ctx.send(f"**Parabéns <@{ctx.author.id}>**! Você ganhou *{num}* lil coins! Volte novamente em 12 horas para resgatar mais!")
+        await ctx.send(f"**Parabéns <@{ctx.author.id}>**! Você ganhou *{num}* lil coins! Volte novamente em 12 horas para resgatar mais! _Sabia que poderia ganhar mais lil coins usando `r!vote`? Experimente!_")
 
 
 
     #PIX
     
     @commands.command(name="pix", aliases=["pagar", "transferir", "pay"])
+    @Money.checkMoney(createData())
     async def _pix(self, ctx, paiduser: discord.User = None, *, ammount: int = None):
         
-
-        if paiduser is None or ammount is None:
+        if paiduser is None or ammount is None or paiduser.id == ctx.author.id:
             
             embed = discord.Embed(
 
@@ -163,9 +191,6 @@ class Economy(commands.Cog):
             embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
             return await ctx.send(embed=embed)
         
-        if self.cursor.getMoney(ctx.author) < ammount or ammount <= 0:
-
-            return await ctx.reply("**Quantia inválida para a transferência! Verifique se foi digitado um número válido ou talvez você esteja meio... Pobre? 😅**")
 
         embed = discord.Embed(
             title = "`PIX`",
@@ -182,10 +207,9 @@ class Economy(commands.Cog):
                 str(r.emoji) in ["\U00002705", "\U0000274c"]
 
         try:
-            reaction, user = await self.client.wait_for('reaction_add', timeout = 60, check=check)
+            reaction, user = await self.client.wait_for('reaction_add', timeout = 240, check=check)
 
         except asyncio.TimeoutError:
-            await ctx.send("Tempo esgotado!")
             return
 
         else:
@@ -247,12 +271,25 @@ class Economy(commands.Cog):
 
 
 
-
+    #VOTE
+        
+    @commands.command(name="vote", aliases=["votar"])
+    async def _vote(self, ctx):
+        await ctx.author.send("link")
     ##                   cassino                     ##
         
 
 
 
+
+
+
+    ##                    events                     ##
+    
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, exc):
+        if isinstance(exc, NoMoney):
+            await ctx.reply("**Quantia inválida para a transferência! Verifique se foi digitado um número válido ou talvez você esteja meio... Pobre? 😅**")
 
 
 async def setup(client):
