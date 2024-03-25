@@ -25,6 +25,9 @@ def createData():
 class NoMoney(commands.CommandError):
     pass
 
+class NoMoneyUS(commands.CommandError):
+    pass
+
 # Class to manipulate the user/money easily
 class Money:
 
@@ -34,17 +37,27 @@ class Money:
 
     # Decorator 
     
-    def checkMoney(self):
+    def checkMoney(self, checku: bool = False):
         def wrapper(func):
             @functools.wraps(func)
             async def wrapped(*args, **kwargs):
 
-                money = self.getMoney(args[-1])
-                ammount = int(kwargs["ammount"])
+                if args[1] is None or args[-1] is None:
+                    pass
+                
+                else:
+                    money = self.getMoney(args[1].author)
+                    ammount = int(kwargs["ammount"])
 
-                if money < ammount or ammount <= 0: raise NoMoney
+                    print(kwargs)
+                    print(args)
 
-
+                    
+                    if checku is True:
+                        money2 = self.getMoney(args[-1])
+                        if money2 < ammount: raise NoMoneyUS
+                    
+                    if money < ammount or ammount <= 0: raise NoMoney
 
                 return await func(*args, **kwargs)
             
@@ -54,20 +67,20 @@ class Money:
 
     # Get Money
     
-    def getMoney(self, user: discord.User):
+    def getMoney(self, user: discord.User) ->int:
 
         key = {"user": user.id}
         cur = self.db.money.find(key)
         try:
            
-             cur.next()
+            cur.next()
 
         except Exception:
     
             self.db.money.insert_one(
                 {
                 "money": 0,
-                "user": user,
+                "user": user.id,
                 }
             )
         
@@ -285,7 +298,7 @@ class Economy(commands.Cog):
     # MadeinHeaven
 
     @commands.command(name="madeinheaven")
-    async def _bitesthedust(self, ctx):
+    async def _madeinheaven(self, ctx):
 
         if ctx.author.id != 409311773720576010:
             return await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
@@ -311,7 +324,72 @@ class Economy(commands.Cog):
         
 
 
+    # CoinFlip
+    @commands.command(name="coinflip", aliases=["caraoucoroa", "50/50"])
+    @Money.checkMoney(createData(), True)
+    async def _coinflip(self, ctx, paiduser: discord.User = None, *, ammount: int = None):
+        
+        if paiduser is None or ammount is None or paiduser.id == ctx.author.id:
+            
+            embed = discord.Embed(
 
+                title = "`COINFLIP`",
+                description = "**ALIASES:** *caraoucoroa*",
+                color=0xa8326d,
+
+            )
+            embed.add_field(name="", value= "**Acha que estás com sorte? **Por que não apostar então?** Marque seu amigo e coloque as lil coins em jogo! O jogador que chama a aposta será sempre a cara, e o que aceita, coroa! \n\n**Exemplo de comando:** _r!coinflip <@1080924319250661456> 10000_\n\n**")
+            embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
+            return await ctx.send(embed=embed)
+
+        embed = discord.Embed(
+            title = "`COINFLIP`",
+            description = f"**> 🪙 | <@{ctx.author.id}> Está fazendo uma aposta contra <@{paiduser.id}> no valor de {ammount} lil coins!** \nCada usuário tem 50% de chances de ganhar!\n\nPara fazer a aposta, **<@{paiduser.id}> precisa confirmar na reação!**",
+            color=0xa8326d,
+        )
+        embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
+        message = await ctx.send(embed=embed)
+
+
+        await message.add_reaction("✅")
+        def check(r: discord.Reaction, u1: discord.User):
+            return u1.id == paiduser.id and r.message.channel.id == ctx.channel.id and \
+                str(r.emoji) in ["\U00002705", "\U0000274c"]
+
+
+        try:
+            reaction, user = await self.client.wait_for('reaction_add', timeout = 100, check=check)
+
+        except asyncio.TimeoutError:
+            return
+
+        else:
+            
+            rand = r.randint(0, 1) # O 0 é cara, 1 é coroa
+
+            if rand == 0:
+                await ctx.send(f"> **🪙 | Cara!** <@{ctx.author.id}> venceu!")
+
+                m1 = self.cursor.getMoney(paiduser)
+                m2 = self.cursor.getMoney(ctx.author)
+
+                m1 = m1 - ammount
+                m2 = m2 + ammount
+
+                self.cursor.setMoney(paiduser, m1)
+                self.cursor.setMoney(ctx.author, m2)
+
+            if rand == 1:
+                await ctx.send(f"> **🪙 | Coroa!** <@{paiduser.id}> venceu!")
+
+                m1 = self.cursor.getMoney(ctx.author)
+                m2 = self.cursor.getMoney(paiduser)
+
+                m1 = m1 - ammount
+                m2 = m2 + ammount
+
+                self.cursor.setMoney(paiduser, m2)
+                self.cursor.setMoney(ctx.author, m1)
 
 
 
@@ -321,7 +399,9 @@ class Economy(commands.Cog):
     async def on_command_error(self, ctx, exc):
         if isinstance(exc, NoMoney):
             await ctx.reply("**Quantia inválida para a transferência! Verifique se foi digitado um número válido ou talvez você esteja meio... Pobre? 😅**")
-
+        
+        if isinstance(exc, NoMoneyUS):
+            await ctx.reply("**O usuário mencionado não tem dinheiro o suficiente para esse comando!!**")
 
 async def setup(client):
     await client.add_cog(Economy(client, createData()))
