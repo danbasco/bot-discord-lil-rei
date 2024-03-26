@@ -267,7 +267,7 @@ class Economy(commands.Cog):
     @commands.command(name="getall")
     async def _getall(self, ctx, limit:int = 0):
 
-        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
+        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
             return ...
         
         i = self.cursor.getAll(limit)
@@ -321,7 +321,7 @@ class Economy(commands.Cog):
     @commands.command(name="madeinheaven")
     async def _madeinheaven(self, ctx):
 
-        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
+        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
             return await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
         
         else:
