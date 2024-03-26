@@ -4,13 +4,9 @@ import random as r
 
 import os
 from discord.ext import commands
-from discord import guild, user
 from pymongo.server_api import ServerApi
 from pymongo.mongo_client import MongoClient
 
-from easy_pil import Editor, load_image_async, Font
-
-import functools
 
 URI = os.environ.get("URI")
 
@@ -28,7 +24,13 @@ class NoMoney(commands.CommandError):
 class NoMoneyUS(commands.CommandError):
     pass
 
-# Class to manipulate the user/money easily
+
+# Class to manipulate the money/user easily
+
+import discord
+import functools
+from discord.ext import commands
+
 class Money:
 
     def __init__(self, db):
@@ -119,7 +121,7 @@ class Money:
             self.db.money.update_one(user, update, True)
 
 
-    #GetPos - Position in the leaderboard
+    # GetPos - Position in the leaderboard
             
         
     def getPos(self, user: discord.User)-> int:
@@ -137,6 +139,31 @@ class Money:
         return i;
     
 
+    # ChangeValues
+    
+    
+    async def changeValues(self, user: discord.User, paiduser: discord.User, ammount: int):
+        
+        m1 = self.getMoney(user)
+        m2 = self.getMoney(paiduser)
+
+        m1 = m1 - ammount
+        m2 = m2 + ammount
+
+        if m1 < 0:
+            m1 = 0
+            self.setMoney(paiduser, self.getMoney(user))
+        else:
+            self.setMoney(paiduser, m2)
+            self.setMoney(user, m1)
+            
+        
+
+class NoMoney(commands.CommandError):
+    pass
+
+class NoMoneyUS(commands.CommandError):
+    pass
 
 class Economy(commands.Cog):
 
@@ -162,7 +189,7 @@ class Economy(commands.Cog):
     @commands.command(name="setmoney")
     async def _setmoney(self, ctx, user: discord.User, ammount: int):
 
-        if ctx.author.id != 409311773720576010:
+        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
             return ...
         
 
@@ -230,15 +257,7 @@ class Economy(commands.Cog):
 
         else:
             
-            m1 = self.cursor.getMoney(ctx.author)
-            m2 = self.cursor.getMoney(paiduser)
-
-            m1 = m1 - ammount
-            m2 = m2 + ammount
-
-            self.cursor.setMoney(ctx.author, m1)
-            self.cursor.setMoney(paiduser, m2)
-
+            self.cursor.changeValues(ctx.author, paiduser, ammount)
             await ctx.send("**Transferência concluida!**")
     
 
@@ -248,7 +267,7 @@ class Economy(commands.Cog):
     @commands.command(name="getall")
     async def _getall(self, ctx, limit:int = 0):
 
-        if ctx.author.id != 409311773720576010:
+        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
             return ...
         
         i = self.cursor.getAll(limit)
@@ -300,7 +319,7 @@ class Economy(commands.Cog):
     @commands.command(name="madeinheaven")
     async def _madeinheaven(self, ctx):
 
-        if ctx.author.id != 409311773720576010:
+        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
             return await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
         
         else:
@@ -370,26 +389,26 @@ class Economy(commands.Cog):
             if rand == 0:
                 await ctx.send(f"> **🪙 | Cara!** <@{ctx.author.id}> venceu!")
 
-                m1 = self.cursor.getMoney(paiduser)
-                m2 = self.cursor.getMoney(ctx.author)
-
-                m1 = m1 - ammount
-                m2 = m2 + ammount
-
-                self.cursor.setMoney(paiduser, m1)
-                self.cursor.setMoney(ctx.author, m2)
+                self.cursor.changeValues(ctx.author, paiduser, ammount)
 
             if rand == 1:
                 await ctx.send(f"> **🪙 | Coroa!** <@{paiduser.id}> venceu!")
 
-                m1 = self.cursor.getMoney(ctx.author)
-                m2 = self.cursor.getMoney(paiduser)
+                self.cursor.changeValues(paiduser, ctx.author, ammount)
 
-                m1 = m1 - ammount
-                m2 = m2 + ammount
 
-                self.cursor.setMoney(paiduser, m2)
-                self.cursor.setMoney(ctx.author, m1)
+
+
+    ##                    global                     ##
+                
+
+
+
+
+
+
+
+
 
 
 

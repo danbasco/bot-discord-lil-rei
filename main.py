@@ -128,6 +128,7 @@ if __name__ == "__main__":
                 print(f"Cog {files} carregada!")
 
 
+
     #main func to load the bot
 
 
