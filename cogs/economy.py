@@ -142,7 +142,7 @@ class Money:
     # ChangeValues
     
     
-    async def changeValues(self, user: discord.User, paiduser: discord.User, ammount: int):
+    def changeValues(self, user: discord.User, paiduser: discord.User, ammount: int):
         
         m1 = self.getMoney(user)
         m2 = self.getMoney(paiduser)
@@ -256,7 +256,6 @@ class Economy(commands.Cog):
             return
 
         else:
-            
             self.cursor.changeValues(ctx.author, paiduser, ammount)
             await ctx.send("**Transferência concluida!**")
     
