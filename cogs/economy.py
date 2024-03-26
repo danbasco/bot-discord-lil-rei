@@ -180,7 +180,7 @@ class Economy(commands.Cog):
         if user is None:
             user = ctx.author
 
-        await ctx.send(f"> <@{user.id}> possui **{self.cursor.getMoney(user)}** lil coins! Posição no rank: **{self.cursor.getPos(user)}**")
+        await ctx.send(f"> <@{user.id}> possui **{self.cursor.getMoney(user)}** rei coins! Posição no rank: **{self.cursor.getPos(user)}**")
 
 
 
@@ -211,7 +211,7 @@ class Economy(commands.Cog):
         money = money+num
         self.cursor.setMoney(ctx.author, money)
 
-        await ctx.send(f"**Parabéns <@{ctx.author.id}>**! Você ganhou *{num}* lil coins! Volte novamente em 12 horas para resgatar mais! _Sabia que poderia ganhar mais lil coins usando `r!vote`? Experimente!_")
+        await ctx.send(f"**Parabéns <@{ctx.author.id}>**! Você ganhou *{num}* rei coins! Volte novamente em 12 horas para resgatar mais! _Sabia que poderia ganhar mais rei coins usando `r!vote`? Experimente!_")
 
 
 
@@ -230,7 +230,7 @@ class Economy(commands.Cog):
                 color=0xa8326d,
 
             )
-            embed.add_field(name="", value= "**Transfira suas lil coins para outro usuário!** Exemplo de comando: _r!pix <@1080924319250661456> 10000_")
+            embed.add_field(name="", value= "**Transfira suas rei coins para outro usuário!** Exemplo de comando: _r!pix <@1080924319250661456> 10000_")
             embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
             return await ctx.send(embed=embed)
         
@@ -288,9 +288,11 @@ class Economy(commands.Cog):
 
             all = self.cursor.getAll(5)
             st = []
+            i = 1
             for val in all:
-                out = "> **<@{}>**: {}\n".format(val["user"], val["money"])
+                out = "> **`#{}`: <@{}>** // _{} rei coins!_\n".format(i, val["user"], val["money"])
                 st.append(out)
+                i += 1
 
 
             description = "".join(st)
@@ -357,13 +359,13 @@ class Economy(commands.Cog):
                 color=0xa8326d,
 
             )
-            embed.add_field(name="", value= "**Acha que estás com sorte? **Por que não apostar então?** Marque seu amigo e coloque as lil coins em jogo! O jogador que chama a aposta será sempre a cara, e o que aceita, coroa! \n\n**Exemplo de comando:** _r!coinflip <@1080924319250661456> 10000_\n\n**")
+            embed.add_field(name="", value= "**Acha que estás com sorte? **Por que não apostar então?** Marque seu amigo e coloque as rei coins em jogo! O jogador que chama a aposta será sempre a cara, e o que aceita, coroa! \n\n**Exemplo de comando:** _r!coinflip <@1080924319250661456> 10000_\n\n**")
             embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
             return await ctx.send(embed=embed)
 
         embed = discord.Embed(
             title = "`COINFLIP`",
-            description = f"**> 🪙 | <@{ctx.author.id}> Está fazendo uma aposta contra <@{paiduser.id}> no valor de {ammount} lil coins!** \nCada usuário tem 50% de chances de ganhar!\n\nPara fazer a aposta, **<@{paiduser.id}> precisa confirmar na reação!**",
+            description = f"**> 🪙 | <@{ctx.author.id}> Está fazendo uma aposta contra <@{paiduser.id}> no valor de {ammount} rei coins!** \nCada usuário tem 50% de chances de ganhar!\n\nPara fazer a aposta, **<@{paiduser.id}> precisa confirmar na reação!**",
             color=0xa8326d,
         )
         embed.set_footer(text= f"Solicitado por {ctx.author.display_name}", icon_url= ctx.author.avatar.url)
