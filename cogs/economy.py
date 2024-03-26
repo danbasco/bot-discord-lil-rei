@@ -189,7 +189,7 @@ class Economy(commands.Cog):
     @commands.command(name="setmoney")
     async def _setmoney(self, ctx, user: discord.User, ammount: int):
 
-        if ctx.author.id != 409311773720576010 or ctx.author.id != 1009848625108619355:
+        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
             return ...
         
 
