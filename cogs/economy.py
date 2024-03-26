@@ -246,7 +246,7 @@ class Economy(commands.Cog):
 
         await message.add_reaction("✅")
         def check(r: discord.Reaction, u: discord.User):
-            return u.id == ctx.author.id and r.message.channel.id == ctx.channel.id and \
+            return u.id == ctx.author.id and r.message == ctx.message and \
                 str(r.emoji) in ["\U00002705", "\U0000274c"]
 
         try:
@@ -374,7 +374,7 @@ class Economy(commands.Cog):
 
         await message.add_reaction("✅")
         def check(r: discord.Reaction, u1: discord.User):
-            return u1.id == paiduser.id and r.message.channel.id == ctx.channel.id and \
+            return u1.id == paiduser.id and r.message == ctx.message and \
                 str(r.emoji) in ["\U00002705", "\U0000274c"]
 
 
