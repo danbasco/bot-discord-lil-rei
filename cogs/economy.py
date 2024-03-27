@@ -390,12 +390,12 @@ class Economy(commands.Cog):
             if rand == 0:
                 await ctx.send(f"> **🪙 | Cara!** <@{ctx.author.id}> venceu!")
 
-                self.cursor.changeValues(ctx.author, paiduser, ammount)
+                self.cursor.changeValues(paiduser, ctx.author, ammount)
 
             if rand == 1:
                 await ctx.send(f"> **🪙 | Coroa!** <@{paiduser.id}> venceu!")
 
-                self.cursor.changeValues(paiduser, ctx.author, ammount)
+                self.cursor.changeValues(ctx.author, paiduser, ammount)
 
 
 
