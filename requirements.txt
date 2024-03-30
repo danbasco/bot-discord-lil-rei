@@ -16,3 +16,4 @@ yarl==1.9.4
 flask
 pillow
 easy-pil
+requests

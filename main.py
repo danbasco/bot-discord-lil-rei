@@ -11,14 +11,21 @@ from keep_alive import keep_alive
 
 #.env files
 
+keep_alive()
 load_dotenv()
-    
+
+def getOwners() -> list:
+
+    lista = []
+    for name, value in os.environ.items():
+        if(name.startswith("OWNERID")):
+            lista.append(int(value))
+    return lista
+
+
 TOKEN = os.environ.get("DISCORD_TOKEN")
 OPENAI_T = os.environ.get("OPENAI")
-OWNER_ID = os.environ.get("OWNER_ID")
 APP_ID = os.environ.get("APP_ID")
-
-keep_alive()
 
 
 class LilRei(commands.Bot):
@@ -29,7 +36,7 @@ class LilRei(commands.Bot):
             help_command=None, 
             case_insensitive=True, 
             intents=discord.Intents.all(), 
-            owner_ids=[409311773720576010, 1009848625108619355],
+            owner_ids=getOwners(),
             application_id =APP_ID)
 
     async def on_ready(self):
@@ -45,7 +52,9 @@ class LilRei(commands.Bot):
         await client.change_presence(status=discord.Status.online, activity=activity)
 
         syc = await self.tree.sync()
-        print(f"Foram sincronizados {len(syc)} comandos.")
+
+        channel = self.get_channel(890021283759276064)
+        await channel.send("> **Status do bot:** _Online ✅_.")
 
         print("Bot está pronto")
 
@@ -62,6 +71,9 @@ async def on_connect():
 
 @client.event
 async def on_resumed():
+
+    channel = client.get_channel(890021283759276064)
+    await channel.send("> **Status do bot:** _Conectado ✅_.")
     print("Bot resumed.")
 
 
