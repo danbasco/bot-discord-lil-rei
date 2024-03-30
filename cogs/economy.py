@@ -167,9 +167,10 @@ class NoMoneyUS(commands.CommandError):
 
 class Economy(commands.Cog):
 
-    def __init__(self, client, cursor):
+    def __init__(self, client):
+
         self.client = client
-        self.cursor = cursor
+        self.cursor = createData()
 
 
     # Bank
@@ -416,4 +417,4 @@ class Economy(commands.Cog):
             await ctx.reply("**O usuário mencionado não tem dinheiro o suficiente para esse comando!!**")
 
 async def setup(client):
-    await client.add_cog(Economy(client, createData()))
+    await client.add_cog(Economy(client))

@@ -3,7 +3,7 @@ import os
 from discord.ext import commands
 from discord import app_commands
 
-class RenderAPI:
+class RenderAPI(object):
 
     def __init__(self) -> None:
         self.serviceid = os.environ.get("SERVICE_ID")
@@ -12,7 +12,7 @@ class RenderAPI:
 
         self.url = f"https://api.render.com/v1/services/{self.serviceid}/deploys"
 
-    def Trigger(self) -> str:
+    def Trigger(self):
         
         payload = { "clearCache": "do_not_clear" }
         headers = {
@@ -22,13 +22,12 @@ class RenderAPI:
         }
 
         response = requests.post(self.url, json=payload, headers=headers)
-
-        return response.text["commit"]
     
 
 class Render(commands.Cog):
     def __init__(self, client) -> None:
         self.client = client
+        self.r = RenderAPI()
 
     @commands.command(name="deploy")
     @commands.is_owner()
@@ -37,9 +36,8 @@ class Render(commands.Cog):
 
         channel = ctx.bot.get_channel(890021283759276064)
         await channel.send("> **Status do bot:** _Reiniciando... 🔄️_")
-        reason  = RenderAPI.Trigger()
+        reason  = self.r.Trigger()
 
-        print(reason)
 
 
 async def setup(client):
