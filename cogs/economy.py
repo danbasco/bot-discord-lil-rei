@@ -187,11 +187,8 @@ class Economy(commands.Cog):
     # Setmoney
 
     @commands.command(name="setmoney")
+    @commands.is_owner()
     async def _setmoney(self, ctx, user: discord.User, ammount: int):
-
-        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
-            return ...
-        
 
         self.cursor.setMoney(user, ammount)
         await ctx.send(f"**Novo valor da conta de <@{user.id}>:** {self.cursor.getMoney(user)}.")
@@ -264,10 +261,8 @@ class Economy(commands.Cog):
     # Getall
 
     @commands.command(name="getall")
+    @commands.is_owner()
     async def _getall(self, ctx, limit:int = 0):
-
-        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
-            return ...
         
         i = self.cursor.getAll(limit)
         j = []
@@ -309,34 +304,31 @@ class Economy(commands.Cog):
 
     # Vote
     
-    '''
+    
     @commands.command(name="vote", aliases=["votar"])
     async def _vote(self, ctx):
-        await ctx.author.send("link")
-    '''
+        await ctx.author.send("Terminando de configurar... Em breve!")
+    
 
     # MadeinHeaven
 
     @commands.command(name="madeinheaven")
+    @commands.is_owner()
     async def _madeinheaven(self, ctx):
 
-        if ctx.author.id != 409311773720576010 and ctx.author.id != 1009848625108619355:
-            return await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
-        
+            
+        def check(message):
+            return message.author == ctx.author and message.content == 'confirmar'
+                
+        try: 
+            message = await self.client.wait_for("message", timeout=10, check=check)
+    
+        except asyncio.TimeoutError:
+            await ctx.send("Tempo esgotado!")
         else:
             
-            def check(message):
-                return message.author == ctx.author and message.content == 'confirmar'
-                
-            try: 
-                message = await self.client.wait_for("message", timeout=10, check=check)
-    
-            except asyncio.TimeoutError:
-                await ctx.send("Tempo esgotado!")
-            else:
-            
-                self.cursor.resetAll()
-                await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
+            self.cursor.resetAll()
+            await ctx.send("https://media1.tenor.com/m/2gyEEp_NdYAAAAAd/made-in-heaven-jojo.gif")
             
 
 

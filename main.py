@@ -29,7 +29,7 @@ class LilRei(commands.Bot):
             help_command=None, 
             case_insensitive=True, 
             intents=discord.Intents.all(), 
-            owner_id=OWNER_ID,
+            owner_ids=[409311773720576010, 1009848625108619355],
             application_id =APP_ID)
 
     async def on_ready(self):
@@ -39,16 +39,18 @@ class LilRei(commands.Bot):
                       
 #status
 
-        status = f"em {str(len(client.guilds))} servidores!" #Set this as your discord bot status
+        status = f"Em {str(len(client.guilds))} servidores! Digite /help!" #Set this as your discord bot status
 
         activity = discord.Game(name= status, type= 3)
         await client.change_presence(status=discord.Status.online, activity=activity)
+
+        syc = await self.tree.sync()
+        print(f"Foram sincronizados {len(syc)} comandos.")
 
         print("Bot está pronto")
 
 
 client = LilRei() #the bot client
-
 
 ##EVENTS
 
@@ -90,7 +92,7 @@ async def on_message(message):
             return ...
 
         else:
-            await message.channel.send(f"O meu prefixo padrão é `r!`") #Change the ! for the bot prefix
+            await message.channel.send(f"O meu prefixo padrão é `r!") #Change the ! for the bot prefix
     else:
         await client.process_commands(message)
 
@@ -100,7 +102,7 @@ async def on_guild_join(guild):
     
     servers = str(len(client.guilds))
 
-    activity = discord.Game(name= f"Em {servers} servidores!", type= 3)
+    activity = discord.Game(name= f"Em {servers} servidores! Digite /help!", type= 3)
     await client.change_presence(status=discord.Status.online, activity=activity)
 
 
@@ -110,10 +112,12 @@ async def on_guild_remove(guild):
     
     servers = str(len(client.guilds))
 
-    activity = discord.Game(name= f"Em {servers} servidores!", type= 3)
+    activity = discord.Game(name= f"Em {servers} servidores! Digite /help!", type= 3)
     await client.change_presence(status=discord.Status.online, activity=activity)
 
     print("Status alterado com sucesso")
+
+
 
 
 
