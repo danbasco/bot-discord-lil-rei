@@ -90,7 +90,7 @@ async def on_message(message):
             return ...
 
         else:
-            await message.channel.send(f"O meu prefixo padrão é `r!`") #Change the ! for the bot prefix
+            await message.channel.send(f"O meu prefixo padrão é `r!`.") #Change the ! for the bot prefix
     else:
         await client.process_commands(message)
 
